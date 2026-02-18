@@ -78,8 +78,8 @@ export async function POST(
   if (worker) {
     // We reuse the processor but force it to bypass location check this time (internal flag needed?)
     // Actually, processTimeCommand handles the logic. We'll call it directly.
-    // '1' = Clock In
-    await processTimeCommand(worker, '1', verification.platform);
+    // Clock In (bypassing geofence since location is already verified)
+    await processTimeCommand(worker, 'clock_in', verification.platform, true);
     
     // Mark token used
     await supabase
