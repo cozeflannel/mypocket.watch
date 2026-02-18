@@ -34,7 +34,7 @@ export async function GET(
     try {
       const pdfBuffer = await generatePaystubPDF(ctx.company, entry.worker, period, entry);
       
-      return new NextResponse(pdfBuffer.buffer, {
+      return new NextResponse(pdfBuffer, {
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Disposition': `attachment; filename="paystub_${entry.worker.last_name}_${period.end_date}.pdf"`,
