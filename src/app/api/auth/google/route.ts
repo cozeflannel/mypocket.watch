@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline', // crucial for refresh token
     scope: scopes,
-    state: JSON.stringify({ companyId: ctx.company.id, workerId: ctx.user.id }),
+    state: JSON.stringify({ companyId: ctx.company.id, workerId: ctx.adminUser.id }),
     prompt: 'consent' // force new refresh token
   });
 
