@@ -91,6 +91,7 @@ export interface Schedule {
   end_time: string;
   break_minutes: number;
   notes: string | null;
+  google_event_id: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;

@@ -109,7 +109,8 @@ export async function generatePaystubPDF(
     // Footer
     doc
       .fontSize(8)
-      .text('This is a computer-generated document.', 50, 700, { align: 'center', color: 'gray' });
+      .fillColor('gray')
+      .text('This is a computer-generated document.', 50, 700, { align: 'center' });
 
     doc.end();
   });

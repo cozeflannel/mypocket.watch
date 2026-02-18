@@ -6,7 +6,14 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Zap, Calendar, DollarSign, Users, ChevronDown, Menu, X, Clock } from 'lucide-react';
 
-const navigation = [
+type NavItem = {
+  name: string;
+  href: string;
+  icon: typeof Zap;
+  children?: { name: string; href: string }[];
+};
+
+const navigation: NavItem[] = [
   { name: 'Live Status', href: '/live-status', icon: Zap },
   { name: 'Calendar', href: '/calendar', icon: Calendar },
   { name: 'Payroll', href: '/payroll', icon: DollarSign },
@@ -20,7 +27,7 @@ const navigation = [
       { name: 'Worker', href: '/staff/worker' },
     ],
   },
-] as const;
+];
 
 export function Sidebar() {
   const pathname = usePathname();
