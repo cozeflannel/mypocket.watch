@@ -29,19 +29,20 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Redirect unauthenticated users away from dashboard
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/auth') &&
-    request.nextUrl.pathname !== '/'
-  ) {
+  const isAuthPage = request.nextUrl.pathname.startsWith('/auth');
+  const isLandingPage = request.nextUrl.pathname === '/';
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api');
+  const isPublicPath = isAuthPage || isLandingPage || isApiRoute;
+
+  // Redirect unauthenticated users away from protected pages
+  if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages
-  if (user && request.nextUrl.pathname.startsWith('/auth')) {
+  // Redirect authenticated users away from auth pages (but allow landing page)
+  if (user && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = '/live-status';
     return NextResponse.redirect(url);

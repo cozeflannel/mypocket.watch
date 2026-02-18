@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Zap, Calendar, DollarSign, Users, ChevronDown, Menu, X, Clock } from 'lucide-react';
+import { Zap, Calendar, DollarSign, Users, ChevronDown, Menu, X, Clock, HelpCircle, Link2 } from 'lucide-react';
 
 type NavItem = {
   name: string;
@@ -27,6 +27,8 @@ const navigation: NavItem[] = [
       { name: 'Worker', href: '/staff/worker' },
     ],
   },
+  { name: 'Support', href: '/support', icon: HelpCircle },
+  { name: 'Integrations', href: '/integrations', icon: Link2 },
 ];
 
 export function Sidebar() {

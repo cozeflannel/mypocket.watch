@@ -28,13 +28,16 @@ export async function POST(request: NextRequest) {
   if (isAuthError(ctx)) return ctx;
 
   const body = await request.json();
-  const { first_name, last_name, phone, email, hourly_rate, position, color } = body;
+  const { first_name, last_name, phone, email, hourly_rate, position, color, hire_date, manager_id, team_id } = body;
 
   if (!first_name || !last_name || !phone) {
     return NextResponse.json({ error: 'first_name, last_name, and phone are required' }, { status: 400 });
   }
 
   const assignedColor = color || COLORS[Math.floor(Math.random() * COLORS.length)];
+
+  // Use provided hire_date or default to today
+  const workerHireDate = hire_date || new Date().toISOString().split('T')[0];
 
   const { data: worker, error } = await ctx.supabase
     .from('workers')
@@ -47,6 +50,9 @@ export async function POST(request: NextRequest) {
       hourly_rate: hourly_rate || null,
       position: position || null,
       color: assignedColor,
+      hire_date: workerHireDate,
+      manager_id: manager_id || null,
+      team_id: team_id || null,
     })
     .select()
     .single();

@@ -2,6 +2,7 @@
 
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
+import { LoadingSpinner } from './LoadingSpinner';
 
 const variants = {
   primary: 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800',
@@ -20,10 +21,11 @@ const sizes = {
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: keyof typeof variants;
   size?: keyof typeof sizes;
+  loading?: boolean;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', disabled, ...props }, ref) => {
+  ({ className, variant = 'primary', size = 'md', loading, disabled, children, ...props }, ref) => {
     return (
       <button
         ref={ref}
@@ -33,9 +35,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           sizes[size],
           className
         )}
-        disabled={disabled}
+        disabled={disabled || loading}
         {...props}
-      />
+      >
+        {loading && <LoadingSpinner size="sm" />}
+        {children}
+      </button>
     );
   }
 );
