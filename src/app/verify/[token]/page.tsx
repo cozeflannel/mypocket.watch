@@ -91,9 +91,12 @@ export default function VerifyLocationPage() {
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Success!</h1>
             <p className="mt-2 text-gray-500 dark:text-gray-400">{message}</p>
             {returnLink && (
-              <Button asChild className="mt-6 w-full" variant="outline">
-                <a href={returnLink}>Return to Chat</a>
-              </Button>
+              <a 
+                href={returnLink}
+                className="mt-6 w-full inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 px-4 py-2 text-sm"
+              >
+                Return to Chat
+              </a>
             )}
           </>
         )}
