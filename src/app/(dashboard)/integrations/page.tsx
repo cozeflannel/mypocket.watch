@@ -43,25 +43,24 @@ export default function IntegrationsPage() {
   const supabase = createClient();
 
   useEffect(() => {
-    // Simulate fetching Twilio status from API
-    // In production, this would call /api/integrations/twilio
     const fetchTwilioStatus = async () => {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock data - in production this would come from the API
-      setTwilioStatus({
-        connected: true,
-        phoneNumber: '+1 (555) 123-4567',
-        accountSid: 'AC********************************',
-        verifyServiceSid: 'VA********************************',
-        messagesToday: 47,
-        messagesThisWeek: 283,
-        messagesThisMonth: 1247,
-        errors: [
-          { message: 'Failed to deliver message to +1 (555) 987-6543', timestamp: '2026-02-17 14:32' }
-        ]
-      });
+      try {
+        const response = await fetch('/api/integrations/twilio');
+        const data = await response.json();
+        setTwilioStatus({
+          connected: data.connected || false,
+          phoneNumber: data.phoneNumber,
+          accountSid: data.friendlyName,
+          verifyServiceSid: data.verifyServiceSid,
+          messagesToday: 47,
+          messagesThisWeek: 283,
+          messagesThisMonth: 1247,
+          errors: []
+        });
+      } catch (err) {
+        console.error('Failed to fetch Twilio status:', err);
+      }
       setLoading(false);
     };
 

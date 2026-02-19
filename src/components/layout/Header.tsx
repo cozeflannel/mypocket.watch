@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import { Bell, Sun, Moon, LogOut, User } from 'lucide-react';
+import { Bell, Sun, Moon, LogOut, User, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useLoading } from '@/contexts/LoadingContext';
 
 export function Header() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export function Header() {
   const [now, setNow] = useState(new Date());
   const [darkMode, setDarkMode] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const { isLoading } = useLoading();
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60_000);
@@ -59,6 +61,12 @@ export function Header() {
         </div>
       </div>
       <div className="flex items-center gap-2">
+        {isLoading && (
+          <div className="flex items-center gap-2 text-blue-600">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">Loading...</span>
+          </div>
+        )}
         <button
           onClick={toggleDark}
           className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"

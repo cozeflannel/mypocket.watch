@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useLoading } from '@/contexts/LoadingContext';
 import { Zap, Calendar, DollarSign, Users, ChevronDown, Menu, X, Clock, HelpCircle, Link2 } from 'lucide-react';
 
 type NavItem = {
@@ -35,6 +37,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [staffOpen, setStaffOpen] = useState(pathname.startsWith('/staff'));
+  const { isLoading } = useLoading();
 
   return (
     <>
