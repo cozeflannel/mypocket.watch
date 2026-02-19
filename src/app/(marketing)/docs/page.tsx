@@ -292,7 +292,7 @@ admin_users (1) ────── (N) audit_logs`}
                     
                     <div className="rounded-lg border border-gray-200 p-4">
                       <div className="flex items-center gap-2">
-                        <Badge variant="destructive">DELETE</Badge>
+                        <Badge variant="danger">DELETE</Badge>
                         <code className="text-sm">/api/workers/[id]</code>
                       </div>
                       <p className="mt-2 text-sm text-gray-600">Delete a worker</p>
@@ -423,17 +423,17 @@ admin_users (1) ────── (N) audit_logs`}
                   <tbody className="space-y-3">
                     <tr>
                       <td className="py-2 font-mono text-blue-600">NEXT_PUBLIC_SUPABASE_URL</td>
-                      <td className="py-2"><Badge variant="destructive">Yes</Badge></td>
+                      <td className="py-2"><Badge variant="danger">Yes</Badge></td>
                       <td className="py-2">Supabase project URL</td>
                     </tr>
                     <tr>
                       <td className="py-2 font-mono text-blue-600">NEXT_PUBLIC_SUPABASE_ANON_KEY</td>
-                      <td className="py-2"><Badge variant="destructive">Yes</Badge></td>
+                      <td className="py-2"><Badge variant="danger">Yes</Badge></td>
                       <td className="py-2">Supabase anon key</td>
                     </tr>
                     <tr>
                       <td className="py-2 font-mono text-blue-600">SUPABASE_SERVICE_ROLE_KEY</td>
-                      <td className="py-2"><Badge variant="destructive">Yes</Badge></td>
+                      <td className="py-2"><Badge variant="danger">Yes</Badge></td>
                       <td className="py-2">Service role key (server-side only)</td>
                     </tr>
                     <tr>
