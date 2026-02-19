@@ -283,7 +283,7 @@ export default function IntegrationsPage() {
                   <p className="text-xs text-gray-500">Coming soon</p>
                 </div>
               </div>
-              <Badge variant="secondary">Coming Soon</Badge>
+              <Badge variant="default">Coming Soon</Badge>
             </div>
           </Card>
 
@@ -300,7 +300,7 @@ export default function IntegrationsPage() {
                   <p className="text-xs text-gray-500">Coming soon</p>
                 </div>
               </div>
-              <Badge variant="secondary">Coming Soon</Badge>
+              <Badge variant="default">Coming Soon</Badge>
             </div>
           </Card>
 
@@ -317,7 +317,7 @@ export default function IntegrationsPage() {
                   <p className="text-xs text-gray-500">Coming soon</p>
                 </div>
               </div>
-              <Badge variant="secondary">Coming Soon</Badge>
+              <Badge variant="default">Coming Soon</Badge>
             </div>
           </Card>
 
@@ -334,7 +334,7 @@ export default function IntegrationsPage() {
                   <p className="text-xs text-gray-500">Coming soon</p>
                 </div>
               </div>
-              <Badge variant="secondary">Coming Soon</Badge>
+              <Badge variant="default">Coming Soon</Badge>
             </div>
           </Card>
         </div>
