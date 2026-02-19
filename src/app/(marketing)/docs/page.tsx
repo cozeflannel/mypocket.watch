@@ -438,22 +438,22 @@ admin_users (1) ────── (N) audit_logs`}
                     </tr>
                     <tr>
                       <td className="py-2 font-mono text-blue-600">NEXT_PUBLIC_APP_URL</td>
-                      <td className="py-2"><Badge variant="secondary">No</Badge></td>
+                      <td className="py-2"><Badge variant="default">No</Badge></td>
                       <td className="py-2">App URL for OAuth redirects</td>
                     </tr>
                     <tr>
                       <td className="py-2 font-mono text-blue-600">TWILIO_ACCOUNT_SID</td>
-                      <td className="py-2"><Badge variant="secondary">No</Badge></td>
+                      <td className="py-2"><Badge variant="default">No</Badge></td>
                       <td className="py-2">Twilio Account SID</td>
                     </tr>
                     <tr>
                       <td className="py-2 font-mono text-blue-600">TWILIO_AUTH_TOKEN</td>
-                      <td className="py-2"><Badge variant="secondary">No</Badge></td>
+                      <td className="py-2"><Badge variant="default">No</Badge></td>
                       <td className="py-2">Twilio Auth Token</td>
                     </tr>
                     <tr>
                       <td className="py-2 font-mono text-blue-600">TWILIO_VERIFY_SERVICE_SID</td>
-                      <td className="py-2"><Badge variant="secondary">No</Badge></td>
+                      <td className="py-2"><Badge variant="default">No</Badge></td>
                       <td className="py-2">Twilio Verify Service SID</td>
                     </tr>
                   </tbody>

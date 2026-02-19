@@ -238,7 +238,7 @@ export default function SupportPage() {
                   className="flex w-full items-center justify-between p-4 text-left"
                 >
                   <div>
-                    <Badge variant="secondary" className="mb-2 text-xs">
+                    <Badge variant="default" className="mb-2 text-xs">
                       {faq.category}
                     </Badge>
                     <p className="font-medium">{faq.question}</p>
@@ -274,7 +274,7 @@ export default function SupportPage() {
                 <div className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <Badge variant="secondary" className="mb-2 text-xs">
+                      <Badge variant="default" className="mb-2 text-xs">
                         {article.category}
                       </Badge>
                       <CardTitle className="mb-2">{article.title}</CardTitle>
