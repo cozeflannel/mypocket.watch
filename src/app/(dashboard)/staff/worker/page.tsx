@@ -635,7 +635,7 @@ export default function WorkerPage() {
             {formData.schedule_template === 'custom' && (
               <div className="mt-2 flex flex-wrap gap-2">
                 {DAYS.filter(d => formData.custom_schedule[d.key].enabled).map(day => (
-                  <Badge key={day.key} variant="secondary">
+                  <Badge key={day.key} variant="default">
                     {day.label}: {formData.custom_schedule[day.key].start} - {formData.custom_schedule[day.key].end}
                   </Badge>
                 ))}
