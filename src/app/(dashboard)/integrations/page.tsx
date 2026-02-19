@@ -111,7 +111,7 @@ export default function IntegrationsPage() {
                     Connected
                   </Badge>
                 ) : (
-                  <Badge variant="destructive">
+                  <Badge variant="danger">
                     <XCircle className="mr-1 h-3 w-3" />
                     Not Connected
                   </Badge>
