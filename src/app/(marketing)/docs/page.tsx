@@ -263,7 +263,7 @@ admin_users (1) ────── (N) audit_logs`}
                     
                     <div className="rounded-lg border border-gray-200 p-4">
                       <div className="flex items-center gap-2">
-                        <Badge variant="primary">POST</Badge>
+                        <Badge variant="default">POST</Badge>
                         <code className="text-sm">/api/workers</code>
                       </div>
                       <p className="mt-2 text-sm text-gray-600">Create a new worker</p>
@@ -313,7 +313,7 @@ admin_users (1) ────── (N) audit_logs`}
                     
                     <div className="rounded-lg border border-gray-200 p-4">
                       <div className="flex items-center gap-2">
-                        <Badge variant="primary">POST</Badge>
+                        <Badge variant="default">POST</Badge>
                         <code className="text-sm">/api/teams</code>
                       </div>
                       <p className="mt-2 text-sm text-gray-600">Add worker to team</p>
@@ -334,7 +334,7 @@ admin_users (1) ────── (N) audit_logs`}
                     
                     <div className="rounded-lg border border-gray-200 p-4">
                       <div className="flex items-center gap-2">
-                        <Badge variant="primary">POST</Badge>
+                        <Badge variant="default">POST</Badge>
                         <code className="text-sm">/api/schedules</code>
                       </div>
                       <p className="mt-2 text-sm text-gray-600">Create a schedule</p>
@@ -355,7 +355,7 @@ admin_users (1) ────── (N) audit_logs`}
                     
                     <div className="rounded-lg border border-gray-200 p-4">
                       <div className="flex items-center gap-2">
-                        <Badge variant="primary">POST</Badge>
+                        <Badge variant="default">POST</Badge>
                         <code className="text-sm">/api/time-entries</code>
                       </div>
                       <p className="mt-2 text-sm text-gray-600">Clock in or add entry</p>
