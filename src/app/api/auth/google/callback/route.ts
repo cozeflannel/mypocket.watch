@@ -11,12 +11,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing code or state' }, { status: 400 });
   }
 
-  let state: { companyId: string; workerId: string };
+  let state: { companyId: string; workerId: string; source?: string };
   try {
     state = JSON.parse(stateRaw);
   } catch {
     return NextResponse.json({ error: 'Invalid state parameter' }, { status: 400 });
   }
+
+  const isWorkerPortal = state.source === 'worker_portal';
 
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CALENDAR_CLIENT_ID,
@@ -49,16 +51,15 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Failed to save Google tokens:', error);
-      return NextResponse.redirect(
-        new URL('/integrations?error=db_error', request.url)
-      );
+      const errorRedirect = isWorkerPortal ? '/worker/portal?error=db_error' : '/integrations?error=db_error';
+      return NextResponse.redirect(new URL(errorRedirect, request.url));
     }
 
-    return NextResponse.redirect(new URL('/integrations?gcal=connected', request.url));
+    const successRedirect = isWorkerPortal ? '/worker/portal?gcal=connected' : '/integrations?gcal=connected';
+    return NextResponse.redirect(new URL(successRedirect, request.url));
   } catch (err) {
     console.error('Google OAuth error:', err);
-    return NextResponse.redirect(
-      new URL('/integrations?error=oauth_failed', request.url)
-    );
+    const errorRedirect = isWorkerPortal ? '/worker/portal?error=oauth_failed' : '/integrations?error=oauth_failed';
+    return NextResponse.redirect(new URL(errorRedirect, request.url));
   }
 }

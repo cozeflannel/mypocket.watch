@@ -32,7 +32,8 @@ export async function updateSession(request: NextRequest) {
   const isAuthPage = request.nextUrl.pathname.startsWith('/auth');
   const isLandingPage = request.nextUrl.pathname === '/';
   const isApiRoute = request.nextUrl.pathname.startsWith('/api');
-  const isPublicPath = isAuthPage || isLandingPage || isApiRoute;
+  const isWorkerPortal = request.nextUrl.pathname.startsWith('/worker');
+  const isPublicPath = isAuthPage || isLandingPage || isApiRoute || isWorkerPortal;
 
   // Redirect unauthenticated users away from protected pages
   if (!user && !isPublicPath) {
