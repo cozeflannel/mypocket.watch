@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
 import {
   format,
@@ -25,6 +26,7 @@ import {
   Plus, 
   Clock,
   User,
+  Users,
   X,
   Eye,
   Edit2,
@@ -377,6 +379,17 @@ export default function CalendarPage() {
         onClose={() => setShiftModalOpen(false)} 
         title="Add New Shift"
       >
+        {workers.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center dark:border-gray-700">
+            <Users className="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600" />
+            <p className="mt-3 text-sm font-medium text-gray-700 dark:text-gray-300">No workers found</p>
+            <p className="mt-1 text-sm text-gray-500">Add workers in the Staff section before scheduling shifts.</p>
+            <Link href="/staff/worker" className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+              <Plus className="h-4 w-4" />
+              Add Worker
+            </Link>
+          </div>
+        ) : (
         <form onSubmit={handleSubmitShift} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -472,6 +485,7 @@ export default function CalendarPage() {
             </Button>
           </div>
         </form>
+        )}
       </Modal>
 
       {/* Worker Detail Modal */}

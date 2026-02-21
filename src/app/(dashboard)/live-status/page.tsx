@@ -7,8 +7,9 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableEmpty } from '@/components/ui/Table';
-import { Users, Clock, DollarSign, AlertTriangle, RefreshCw } from 'lucide-react';
-import { format } from 'date-fns';
+import { Users, Clock, DollarSign, AlertTriangle, RefreshCw, MessageSquare, Calendar } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isSameMonth, isSameDay } from 'date-fns';
+import { cn } from '@/lib/utils';
 import type { TimeEntry, Worker, Schedule } from '@/types/database';
 
 interface TimeEntryWithWorker extends TimeEntry {
@@ -36,6 +37,8 @@ export default function LiveStatusPage() {
   const [noShows, setNoShows] = useState<NoShowItem[]>([]);
   const [missingPunches, setMissingPunches] = useState<MissingPunchItem[]>([]);
   const [workers, setWorkers] = useState<Worker[]>([]);
+  const [messages, setMessages] = useState<{ phone: string; worker_name: string; messages: { body: string; direction: string; created_at: string }[] }[]>([]);
+  const [schedules, setSchedules] = useState<ScheduleWithWorker[]>([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(new Date());
 
@@ -115,6 +118,37 @@ export default function LiveStatusPage() {
       }
     }
     setMissingPunches(missing);
+    setSchedules(typedSchedules);
+
+    // Fetch today's message logs
+    try {
+      const { data: msgLogs } = await supabase
+        .from('message_logs')
+        .select('*, worker:workers(id, first_name, last_name)')
+        .eq('company_id', company.id)
+        .gte('created_at', `${today}T00:00:00Z`)
+        .lt('created_at', `${today}T23:59:59Z`)
+        .order('created_at', { ascending: true });
+
+      if (msgLogs && msgLogs.length > 0) {
+        // Group by worker_id
+        const grouped: Record<string, { phone: string; worker_name: string; messages: { body: string; direction: string; created_at: string }[] }> = {};
+        for (const msg of msgLogs) {
+          const key = msg.worker_id || msg.phone_number || 'unknown';
+          if (!grouped[key]) {
+            const wName = msg.worker ? `${msg.worker.first_name} ${msg.worker.last_name}` : (msg.phone_number || 'Unknown');
+            grouped[key] = { phone: msg.phone_number || '', worker_name: wName, messages: [] };
+          }
+          grouped[key].messages.push({ body: msg.message || msg.content || '', direction: msg.direction || 'inbound', created_at: msg.created_at });
+        }
+        setMessages(Object.values(grouped));
+      } else {
+        setMessages([]);
+      }
+    } catch {
+      setMessages([]);
+    }
+
     setLoading(false);
   }, [company, today]);
 
@@ -410,6 +444,108 @@ export default function LiveStatusPage() {
             </div>
           </div>
         )}
+      </Card>
+
+      {/* Message Threads */}
+      <Card padding="none">
+        <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Message Threads
+            </h2>
+            <span className="text-sm text-gray-400">Today</span>
+          </div>
+        </div>
+        <div className="divide-y divide-gray-200 dark:divide-gray-800">
+          {messages.length === 0 ? (
+            <div className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+              No messages today
+            </div>
+          ) : (
+            messages.map((thread, i) => (
+              <div key={i} className="px-6 py-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-gray-900 dark:text-white">{thread.worker_name}</span>
+                  {thread.phone && (
+                    <span className="text-xs text-gray-400">{thread.phone}</span>
+                  )}
+                </div>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {thread.messages.map((msg, j) => (
+                    <div key={j} className={cn('flex', msg.direction === 'outbound' ? 'justify-end' : 'justify-start')}>
+                      <div className={cn(
+                        'rounded-lg px-3 py-1.5 text-sm max-w-[80%]',
+                        msg.direction === 'outbound'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100'
+                      )}>
+                        <p>{msg.body}</p>
+                        <p className={cn('text-[10px] mt-0.5', msg.direction === 'outbound' ? 'text-blue-200' : 'text-gray-400')}>
+                          {format(new Date(msg.created_at), 'h:mm a')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </Card>
+
+      {/* Calendar Widget */}
+      <Card>
+        <div className="flex items-center gap-2 mb-4">
+          <Calendar className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            {format(now, 'MMMM yyyy')}
+          </h2>
+        </div>
+        {(() => {
+          const monthStart = startOfMonth(now);
+          const monthEnd = endOfMonth(now);
+          const calStart = startOfWeek(monthStart);
+          const calEnd = endOfWeek(monthEnd);
+          const days = eachDayOfInterval({ start: calStart, end: calEnd });
+          const scheduleDates = new Set(schedules.map(s => s.date));
+
+          return (
+            <>
+              <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+                  <div key={d}>{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-center text-sm">
+                {days.map((day, i) => {
+                  const inMonth = isSameMonth(day, now);
+                  const todayMatch = isToday(day);
+                  const hasSchedule = scheduleDates.has(format(day, 'yyyy-MM-dd'));
+                  return (
+                    <div
+                      key={i}
+                      className={cn(
+                        'relative py-2 rounded-md',
+                        !inMonth && 'text-gray-300 dark:text-gray-700',
+                        inMonth && 'text-gray-700 dark:text-gray-300',
+                        todayMatch && 'bg-blue-600 text-white font-bold'
+                      )}
+                    >
+                      {format(day, 'd')}
+                      {hasSchedule && (
+                        <span className={cn(
+                          'absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full',
+                          todayMatch ? 'bg-white' : 'bg-blue-500'
+                        )} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          );
+        })()}
       </Card>
     </div>
   );

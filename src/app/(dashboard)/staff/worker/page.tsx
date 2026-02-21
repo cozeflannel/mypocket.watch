@@ -369,20 +369,27 @@ export default function WorkerPage() {
       
       <div>
         <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-          Reports To (Manager)
+          Reports To (Manager) <span className="font-normal text-gray-400">— optional</span>
         </label>
-        <select
-          value={formData.manager_id || ''}
-          onChange={(e) => setFormData({ ...formData, manager_id: e.target.value || null })}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
-        >
-          <option value="">No manager assigned</option>
-          {workers.map((worker) => (
-            <option key={worker.id} value={worker.id}>
-              {worker.first_name} {worker.last_name}
-            </option>
-          ))}
-        </select>
+        {workers.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-gray-300 p-4 text-center text-sm text-gray-500">
+            <p>No existing workers to assign as manager.</p>
+            <p className="mt-1 text-xs text-gray-400">You can update this later after adding more workers.</p>
+          </div>
+        ) : (
+          <select
+            value={formData.manager_id || ''}
+            onChange={(e) => setFormData({ ...formData, manager_id: e.target.value || null })}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
+          >
+            <option value="">No manager assigned</option>
+            {workers.map((worker) => (
+              <option key={worker.id} value={worker.id}>
+                {worker.first_name} {worker.last_name} {worker.position ? `(${worker.position})` : ''}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
       
       <div>
