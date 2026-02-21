@@ -286,7 +286,11 @@ export default function Home() {
               </div>
               <span className="font-semibold text-gray-900 dark:text-white">My Pocket Watch</span>
             </div>
-            <p className="text-sm text-gray-500">© {new Date().getFullYear()} My Pocket Watch. All rights reserved.</p>
+            <div className="flex items-center gap-6">
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white">Privacy Policy</a>
+              <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white">Terms of Service</a>
+              <p className="text-sm text-gray-500">© {new Date().getFullYear()} My Pocket Watch. All rights reserved.</p>
+            </div>
           </div>
         </div>
       </footer>
