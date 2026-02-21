@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Card, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableEmpty } from '@/components/ui/Table';
+import { GeneratePortalLink } from '@/components/GeneratePortalLink';
 
 export default async function StaffPage() {
   const supabase = await createClient();
@@ -76,6 +77,7 @@ export default async function StaffPage() {
               <TableHead>Email</TableHead>
               <TableHead>Rate</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -106,6 +108,9 @@ export default async function StaffPage() {
                     <Badge variant={worker.is_active ? 'success' : 'default'}>
                       {worker.is_active ? 'Active' : 'Inactive'}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <GeneratePortalLink workerId={worker.id} workerName={`${worker.first_name} ${worker.last_name}`} />
                   </TableCell>
                 </TableRow>
               ))
