@@ -329,12 +329,17 @@ export default function WorkerPage() {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Position</label>
-          <input
+          <select
             value={formData.position}
             onChange={(e) => setFormData({ ...formData, position: e.target.value })}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
-            placeholder="e.g., Field Worker"
-          />
+          >
+            <option value="">Select position...</option>
+            <option value="Worker">Worker</option>
+            <option value="Lead">Lead</option>
+            <option value="Manager">Manager</option>
+            <option value="Supervisor">Supervisor</option>
+          </select>
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Hire Date</label>
@@ -373,8 +378,8 @@ export default function WorkerPage() {
         </label>
         {workers.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-300 p-4 text-center text-sm text-gray-500">
-            <p>No existing workers to assign as manager.</p>
-            <p className="mt-1 text-xs text-gray-400">You can update this later after adding more workers.</p>
+            <p>No managers or leads yet.</p>
+            <p className="mt-1 text-xs text-gray-400">Add workers with position "Manager" or "Lead" first.</p>
           </div>
         ) : (
           <select
@@ -383,11 +388,13 @@ export default function WorkerPage() {
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
           >
             <option value="">No manager assigned</option>
-            {workers.map((worker) => (
-              <option key={worker.id} value={worker.id}>
-                {worker.first_name} {worker.last_name} {worker.position ? `(${worker.position})` : ''}
-              </option>
-            ))}
+            {workers
+              .filter((w) => w.position?.toLowerCase() === 'manager' || w.position?.toLowerCase() === 'lead')
+              .map((worker) => (
+                <option key={worker.id} value={worker.id}>
+                  {worker.first_name} {worker.last_name} ({worker.position})
+                </option>
+              ))}
           </select>
         )}
       </div>
