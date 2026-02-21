@@ -116,24 +116,17 @@ export default function WorkerPage() {
 
   async function loadTeams() {
     if (!company) return;
-    const { data } = await supabase
-      .from('team_hierarchy')
-      .select('*, lead:workers!lead_worker_id_fkey(first_name, last_name)')
-      .eq('company_id', company.id);
-    
-    // Group by lead
-    const teamsMap = new Map<string, { id: string; name: string; lead_name: string }>();
-    for (const row of data || []) {
-      const leadName = row.lead ? `${row.lead.first_name} ${row.lead.last_name}` : 'No Lead';
-      if (!teamsMap.has(row.lead_worker_id)) {
-        teamsMap.set(row.lead_worker_id, {
-          id: row.lead_worker_id,
-          name: leadName + "'s Team",
-          lead_name: leadName,
-        });
-      }
+    const res = await fetch('/api/teams');
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      setTeams(
+        data.map((t: { id: string; name: string; manager?: { first_name: string; last_name: string } }) => ({
+          id: t.id,
+          name: t.name,
+          lead_name: t.manager ? `${t.manager.first_name} ${t.manager.last_name}` : '—',
+        }))
+      );
     }
-    setTeams(Array.from(teamsMap.values()));
   }
 
   useEffect(() => {
@@ -183,18 +176,13 @@ export default function WorkerPage() {
       const worker = await response.json();
       setNewWorker(worker);
 
-      // Assign to teams if selected
+      // Assign worker to first selected team via team_id field
       if (formData.team_ids.length > 0) {
-        for (const teamId of formData.team_ids) {
-          await fetch('/api/teams', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              lead_worker_id: teamId,
-              team_member_id: worker.id,
-            }),
-          });
-        }
+        await fetch(`/api/workers/${worker.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ team_id: formData.team_ids[0] }),
+        });
       }
 
       // Create schedule if custom

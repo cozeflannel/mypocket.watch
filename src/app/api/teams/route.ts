@@ -9,24 +9,14 @@ export async function GET() {
     .from('team_hierarchy')
     .select(`
       *,
-      lead:workers!team_hierarchy_lead_worker_id_fkey(id, first_name, last_name, color, position),
-      member:workers!team_hierarchy_team_member_id_fkey(id, first_name, last_name, color, position)
+      manager:workers!team_hierarchy_manager_id_fkey(id, first_name, last_name, color, position)
     `)
-    .eq('company_id', ctx.company.id);
+    .eq('company_id', ctx.company.id)
+    .order('level')
+    .order('sort_order');
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  // Group by lead
-  const teamsMap = new Map<string, { lead: unknown; members: unknown[] }>();
-  for (const row of data || []) {
-    const leadId = row.lead_worker_id;
-    if (!teamsMap.has(leadId)) {
-      teamsMap.set(leadId, { lead: row.lead, members: [] });
-    }
-    teamsMap.get(leadId)!.members.push(row.member);
-  }
-
-  return NextResponse.json(Array.from(teamsMap.values()));
+  return NextResponse.json(data);
 }
 
 export async function POST(request: NextRequest) {
@@ -34,33 +24,29 @@ export async function POST(request: NextRequest) {
   if (isAuthError(ctx)) return ctx;
 
   const body = await request.json();
-  const { lead_worker_id, team_member_id } = body;
+  const { name, level, parent_id, manager_id, sort_order } = body;
 
-  if (!lead_worker_id || !team_member_id) {
-    return NextResponse.json({ error: 'lead_worker_id and team_member_id are required' }, { status: 400 });
-  }
-
-  if (lead_worker_id === team_member_id) {
-    return NextResponse.json({ error: 'A worker cannot be their own team lead' }, { status: 400 });
+  if (!name) {
+    return NextResponse.json({ error: 'Team name is required' }, { status: 400 });
   }
 
   const { data, error } = await ctx.supabase
     .from('team_hierarchy')
     .insert({
       company_id: ctx.company.id,
-      lead_worker_id,
-      team_member_id,
+      name,
+      level: level ?? 0,
+      sort_order: sort_order ?? 0,
+      parent_id: parent_id || null,
+      manager_id: manager_id || null,
     })
-    .select()
+    .select(`
+      *,
+      manager:workers!team_hierarchy_manager_id_fkey(id, first_name, last_name, color, position)
+    `)
     .single();
 
-  if (error) {
-    if (error.code === '23505') {
-      return NextResponse.json({ error: 'This team assignment already exists' }, { status: 409 });
-    }
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data, { status: 201 });
 }
 
@@ -69,19 +55,17 @@ export async function DELETE(request: NextRequest) {
   if (isAuthError(ctx)) return ctx;
 
   const { searchParams } = new URL(request.url);
-  const leadId = searchParams.get('lead_id');
-  const memberId = searchParams.get('member_id');
+  const id = searchParams.get('id');
 
-  if (!leadId || !memberId) {
-    return NextResponse.json({ error: 'lead_id and member_id query params required' }, { status: 400 });
+  if (!id) {
+    return NextResponse.json({ error: 'Team id is required' }, { status: 400 });
   }
 
   const { error } = await ctx.supabase
     .from('team_hierarchy')
     .delete()
     .eq('company_id', ctx.company.id)
-    .eq('lead_worker_id', leadId)
-    .eq('team_member_id', memberId);
+    .eq('id', id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });

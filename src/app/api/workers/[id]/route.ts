@@ -43,6 +43,7 @@ export async function PUT(
     'first_name', 'last_name', 'phone', 'email', 'hourly_rate',
     'position', 'color', 'is_active', 'preferred_communication',
     'whatsapp_id', 'telegram_id', 'messenger_id',
+    'manager_id', 'team_id',
   ];
   const updates: Record<string, unknown> = {};
   for (const field of allowedFields) {
@@ -70,6 +71,14 @@ export async function PUT(
   });
 
   return NextResponse.json(data);
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  // PATCH delegates to PUT
+  return PUT(request, { params });
 }
 
 export async function DELETE(

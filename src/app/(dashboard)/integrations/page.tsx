@@ -304,7 +304,7 @@ export default function IntegrationsPage() {
             </div>
           </Card>
 
-          <Card className="opacity-75">
+          <Card>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/30">
@@ -314,11 +314,20 @@ export default function IntegrationsPage() {
                 </div>
                 <div>
                   <p className="font-medium">Google Calendar</p>
-                  <p className="text-xs text-gray-500">Coming soon</p>
+                  <p className="text-xs text-gray-500">Sync schedules to worker Google Calendars</p>
                 </div>
               </div>
-              <Badge variant="default">Coming Soon</Badge>
+              <a href="/api/auth/google">
+                <Button size="sm">
+                  <Link2 className="mr-1 h-3 w-3" />
+                  Connect
+                </Button>
+              </a>
             </div>
+            <p className="mt-3 text-xs text-gray-500">
+              When connected, new schedules automatically push to the worker&apos;s Google Calendar.
+              Modifications create an audit trail showing original vs. actual hours.
+            </p>
           </Card>
 
           <Card className="opacity-75">

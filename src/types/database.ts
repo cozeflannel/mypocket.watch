@@ -49,6 +49,8 @@ export interface Worker {
   whatsapp_id: string | null;
   telegram_id: string | null;
   messenger_id: string | null;
+  manager_id: string | null;
+  team_id: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -199,6 +201,23 @@ export interface AuditLog {
   old_values: Record<string, unknown> | null;
   new_values: Record<string, unknown> | null;
   ip_address: string | null;
+  created_at: string;
+}
+
+export interface ScheduleModification {
+  id: string;
+  company_id: string;
+  schedule_id: string;
+  modified_by: string | null;
+  modified_by_admin: string | null;
+  original_start_time: string;
+  original_end_time: string;
+  new_start_time: string;
+  new_end_time: string;
+  original_date: string;
+  new_date: string;
+  reason: string | null;
+  google_synced: boolean;
   created_at: string;
 }
 
