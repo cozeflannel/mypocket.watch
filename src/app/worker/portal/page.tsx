@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { WorkerPortalClient } from './WorkerPortalClient';
+import WorkerPortalClient from './WorkerPortalClient';
 
 function Loading() {
   return (
