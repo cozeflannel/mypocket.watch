@@ -23,6 +23,26 @@ export async function sendSMS(to: string, body: string): Promise<string | null> 
   return message.sid;
 }
 
+export async function sendWorkerWelcome(worker: Worker): Promise<boolean> {
+  const botUsername = 'MyPocketWatchbot';
+  
+  const message = `Welcome to PocketWatch, ${worker.first_name}! 🎉\n\n` +
+    `To clock in/out, message us on Telegram: @${botUsername}\n` +
+    `Send /start to begin setup.\n\n` +
+    `Need help? Contact your employer.`;
+  
+  // Try SMS as fallback since Telegram isn't linked yet
+  if (worker.phone) {
+    try {
+      await sendSMS(worker.phone, message);
+      return true;
+    } catch (err) {
+      console.error('Failed to send welcome SMS:', err);
+    }
+  }
+  return false;
+}
+
 export async function sendWhatsApp(to: string, body: string): Promise<string | null> {
   const message = await twilioClient.messages.create({
     to: `whatsapp:${to}`,
@@ -89,8 +109,33 @@ export async function sendMessageToWorker(
   message: string,
   options?: { buttons?: Array<{ id: string; title: string }> }
 ): Promise<{ success: boolean; externalId: string | null }> {
+  // Default to Telegram if no preference set or preference is SMS
+  const preferred = worker.preferred_communication || 'telegram';
+  
+  // Try Telegram first (default) if they have a telegram_id
+  if (preferred === 'telegram' || preferred === 'sms') {
+    if (worker.telegram_id) {
+      try {
+        const keyboard = options?.buttons
+          ? {
+              inline_keyboard: [
+                options.buttons.map((b) => ({ text: b.title, callback_data: b.id })),
+              ],
+            }
+          : undefined;
+        const success = await sendTelegram(worker.telegram_id, message, keyboard);
+        if (success) {
+          return { success: true, externalId: null };
+        }
+      } catch (error) {
+        console.error('Telegram send failed:', error);
+        // Fall through to SMS fallback
+      }
+    }
+  }
+
   try {
-    switch (worker.preferred_communication) {
+    switch (preferred) {
       case 'sms': {
         if (!worker.phone) throw new Error('No phone number');
         const sid = await sendSMS(worker.phone, message);
@@ -107,6 +152,7 @@ export async function sendMessageToWorker(
         return { success: true, externalId: sid };
       }
       case 'telegram': {
+        // Already tried above, this should not be reached if telegram_id exists
         if (!worker.telegram_id) throw new Error('No Telegram ID');
         const keyboard = options?.buttons
           ? {
@@ -128,11 +174,11 @@ export async function sendMessageToWorker(
         return { success: true, externalId: null };
       }
       default:
-        throw new Error(`Unknown platform: ${worker.preferred_communication}`);
+        throw new Error(`Unknown platform: ${preferred}`);
     }
   } catch (error) {
-    // Fallback to SMS
-    if (worker.preferred_communication !== 'sms' && worker.phone) {
+    // Fallback to SMS if preferred is not SMS and phone exists
+    if (preferred !== 'sms' && worker.phone) {
       try {
         const sid = await sendSMS(worker.phone, `[BACKUP] ${message}`);
         return { success: true, externalId: sid };
