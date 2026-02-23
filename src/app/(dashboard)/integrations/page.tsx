@@ -287,7 +287,7 @@ export default function IntegrationsPage() {
             </div>
           </Card>
 
-          <Card className="opacity-75">
+          <Card>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
@@ -297,10 +297,13 @@ export default function IntegrationsPage() {
                 </div>
                 <div>
                   <p className="font-medium">Telegram</p>
-                  <p className="text-xs text-gray-500">Coming soon</p>
+                  <p className="text-xs text-gray-500">Time tracking via bot</p>
                 </div>
               </div>
-              <Badge variant="default">Coming Soon</Badge>
+              <Badge variant="success">
+                <CheckCircle className="mr-1 h-3 w-3" />
+                Ready
+              </Badge>
             </div>
           </Card>
 
