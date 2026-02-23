@@ -91,6 +91,12 @@ export default function WorkerPage() {
   const [saving, setSaving] = useState(false);
   const [newWorker, setNewWorker] = useState<Worker | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  
+  // Edit state
+  const [editWorker, setEditWorker] = useState<Worker | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editData, setEditData] = useState<Partial<Worker>>({});
+  const [editSaving, setEditSaving] = useState(false);
 
   const { company } = useCompany();
   const supabase = createClient();
@@ -235,6 +241,41 @@ export default function WorkerPage() {
 
   const getSelectedTemplate = () => {
     return SCHEDULE_TEMPLATES.find(t => t.id === formData.schedule_template);
+  };
+
+  // Edit worker functions
+  const openEditModal = (worker: Worker) => {
+    setEditWorker(worker);
+    setEditData({
+      first_name: worker.first_name,
+      last_name: worker.last_name,
+      phone: worker.phone,
+      email: worker.email,
+      position: worker.position,
+      hourly_rate: worker.hourly_rate,
+      is_active: worker.is_active,
+    });
+    setEditOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!editWorker) return;
+    setEditSaving(true);
+    try {
+      const response = await fetch(`/api/workers/${editWorker.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editData),
+      });
+      if (!response.ok) throw new Error('Failed to update worker');
+      await loadWorkers();
+      setEditOpen(false);
+      setEditWorker(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update worker');
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   const renderStepIndicator = () => (
@@ -690,6 +731,7 @@ export default function WorkerPage() {
               <TableHead>Rate</TableHead>
               <TableHead>Hire Date</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -723,6 +765,11 @@ export default function WorkerPage() {
                     <Badge variant={worker.is_active ? 'success' : 'default'}>
                       {worker.is_active ? 'Active' : 'Inactive'}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" onClick={() => openEditModal(worker)}>
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -809,6 +856,94 @@ export default function WorkerPage() {
               Close
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Edit Worker Modal */}
+      <Modal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title={`Edit ${editData.first_name} ${editData.last_name}`}
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium">First Name</label>
+              <input
+                value={editData.first_name || ''}
+                onChange={(e) => setEditData({ ...editData, first_name: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">Last Name</label>
+              <input
+                value={editData.last_name || ''}
+                onChange={(e) => setEditData({ ...editData, last_name: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="mb-1 block text-sm font-medium">Phone</label>
+            <input
+              value={editData.phone || ''}
+              onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            />
+          </div>
+          
+          <div>
+            <label className="mb-1 block text-sm font-medium">Email</label>
+            <input
+              value={editData.email || ''}
+              onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium">Position</label>
+              <input
+                value={editData.position || ''}
+                onChange={(e) => setEditData({ ...editData, position: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">Hourly Rate</label>
+              <input
+                type="number"
+                step="0.01"
+                value={editData.hourly_rate || ''}
+                onChange={(e) => setEditData({ ...editData, hourly_rate: e.target.value ? parseFloat(e.target.value) : null })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="is_active"
+              checked={editData.is_active ?? true}
+              onChange={(e) => setEditData({ ...editData, is_active: e.target.checked })}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            <label htmlFor="is_active" className="text-sm font-medium">Active</label>
+          </div>
+        </div>
+        
+        <div className="mt-6 flex justify-end gap-2 border-t pt-4">
+          <Button variant="ghost" onClick={() => setEditOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleEditSave} loading={editSaving}>
+            Save Changes
+          </Button>
         </div>
       </Modal>
     </div>
