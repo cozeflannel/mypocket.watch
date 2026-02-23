@@ -33,18 +33,35 @@ export async function POST(request: Request) {
     }
 
     // 2. Create company
-    const slug = companyName
+    let slug = companyName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
 
-    const { data: company, error: companyError } = await supabase
+    let { data: company, error: companyError } = await supabase
       .from('companies')
       .insert({ name: companyName, slug })
       .select()
       .single();
 
+    // Handle duplicate slug: append random suffix and retry
+    if (companyError?.code === '23505') {
+      const randomSuffix = Math.random().toString(36).substring(2, 7);
+      slug = `${slug}-${randomSuffix}`;
+      
+      const retry = await supabase
+        .from('companies')
+        .insert({ name: companyName, slug })
+        .select()
+        .single();
+        
+      company = retry.data;
+      companyError = retry.error;
+    }
+
     if (companyError || !company) {
+      console.error('Company creation failed:', companyError);
+      
       // Rollback: delete the auth user
       await supabase.auth.admin.deleteUser(authData.user.id);
       
