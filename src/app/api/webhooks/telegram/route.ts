@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getWorkerByTelegramId, parseCommand, processTimeCommand, getHelpText } from '@/lib/time-entry-processor';
+import { getWorkerByTelegramId, getWorkerByPhone, parseCommand, processTimeCommand, getHelpText } from '@/lib/time-entry-processor';
 import { sendTelegram, getTelegramKeyboard, logMessage } from '@/lib/messaging';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 
 interface TelegramUpdate {
   message?: {
@@ -14,6 +15,22 @@ interface TelegramUpdate {
     message: { chat: { id: number } };
     data: string;
   };
+}
+
+function getSupabaseAdmin() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+async function linkTelegramId(workerId: string, telegramId: string): Promise<boolean> {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from('workers')
+    .update({ telegram_id: telegramId })
+    .eq('id', workerId);
+  return !error;
 }
 
 export async function POST(request: NextRequest) {
@@ -97,7 +114,7 @@ export async function POST(request: NextRequest) {
   if (update.message?.text) {
     const text = update.message.text;
 
-    // Handle /start command
+    // Handle /start command - with self-onboarding flow
     if (text === '/start') {
       const worker = await getWorkerByTelegramId(userId);
       if (worker) {
@@ -109,15 +126,37 @@ export async function POST(request: NextRequest) {
       } else {
         await sendTelegram(
           chatId,
-          "Welcome to My Pocket Watch! ⏰\n\nYour employer needs to register your Telegram ID first. Please contact them to get set up."
+          "Welcome to My Pocket Watch! ⏰\n\nTo get started, please reply with your phone number (the one your employer has on file). We'll verify and link your account automatically."
         );
       }
       return NextResponse.json({ ok: true });
     }
 
+    // Handle phone number verification (onboarding)
     const worker = await getWorkerByTelegramId(userId);
     if (!worker) {
-      await sendTelegram(chatId, "You're not registered. Please contact your employer.");
+      // Try to find by phone number
+      const phoneWorker = await getWorkerByPhone(text);
+      if (phoneWorker) {
+        const linked = await linkTelegramId(phoneWorker.id, userId);
+        if (linked) {
+          await sendTelegram(
+            chatId,
+            `✅ You're all set, ${phoneWorker.first_name}! Your Telegram is now linked to your PocketWatch account.\n\nUse the buttons below to clock in/out:`,
+            getTelegramKeyboard()
+          );
+        } else {
+          await sendTelegram(
+            chatId,
+            "Something went wrong linking your account. Please try again or contact your employer."
+          );
+        }
+      } else {
+        await sendTelegram(
+          chatId,
+          "We couldn't find an account with that phone number. Please check with your employer or try again."
+        );
+      }
       return NextResponse.json({ ok: true });
     }
 
