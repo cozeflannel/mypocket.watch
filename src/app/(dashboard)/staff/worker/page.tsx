@@ -931,7 +931,7 @@ export default function WorkerPage() {
                 </div>
                 <Button
                   size="sm"
-                  variant={linkCopied ? 'secondary' : 'default'}
+                  variant={linkCopied ? 'secondary' : 'primary'}
                   onClick={() => {
                     navigator.clipboard.writeText(telegramLink);
                     setLinkCopied(true);
