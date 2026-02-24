@@ -36,7 +36,7 @@ export async function PATCH(request: NextRequest) {
   if (isAuthError(ctx)) return ctx;
 
   const body = await request.json();
-  const { full_name, phone, company_name } = body;
+  const { full_name, phone, company_name, job_site_lat, job_site_lng, geofence_radius } = body;
 
   const updates: { full_name?: string; phone?: string } = {};
   if (full_name !== undefined) updates.full_name = full_name;
@@ -63,11 +63,31 @@ export async function PATCH(request: NextRequest) {
     });
   }
 
-  // Update company name if provided
-  if (company_name) {
+  // Update company settings if provided
+  const companyUpdates: {
+    name?: string;
+    job_site_lat?: number | null;
+    job_site_lng?: number | null;
+    geofence_radius?: number | null;
+  } = {};
+
+  if (company_name !== undefined) {
+    companyUpdates.name = company_name;
+  }
+  if (job_site_lat !== undefined) {
+    companyUpdates.job_site_lat = job_site_lat === '' || job_site_lat === null ? null : parseFloat(job_site_lat);
+  }
+  if (job_site_lng !== undefined) {
+    companyUpdates.job_site_lng = job_site_lng === '' || job_site_lng === null ? null : parseFloat(job_site_lng);
+  }
+  if (geofence_radius !== undefined) {
+    companyUpdates.geofence_radius = geofence_radius === '' || geofence_radius === null ? null : parseInt(geofence_radius);
+  }
+
+  if (Object.keys(companyUpdates).length > 0) {
     const { error: companyError } = await ctx.supabase
       .from('companies')
-      .update({ name: company_name })
+      .update(companyUpdates)
       .eq('id', ctx.company.id);
 
     if (companyError) {
@@ -80,7 +100,7 @@ export async function PATCH(request: NextRequest) {
       action: 'update',
       resourceType: 'company',
       resourceId: ctx.company.id,
-      newValues: { name: company_name },
+      newValues: companyUpdates,
     });
   }
 

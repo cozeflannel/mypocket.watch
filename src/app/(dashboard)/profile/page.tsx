@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Card, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { User, Building2, Mail, Phone, Lock } from 'lucide-react';
+import { User, Building2, Mail, Phone, Lock, MapPin } from 'lucide-react';
 
 type ProfileData = {
   adminUser: {
@@ -19,6 +19,9 @@ type ProfileData = {
     id: string;
     name: string;
     slug: string;
+    job_site_lat: number | null;
+    job_site_lng: number | null;
+    geofence_radius: number | null;
   };
 };
 
@@ -33,6 +36,9 @@ export default function ProfilePage() {
     full_name: '',
     phone: '',
     company_name: '',
+    job_site_lat: '',
+    job_site_lng: '',
+    geofence_radius: '',
   });
   const [passwordForm, setPasswordForm] = useState({
     newPassword: '',
@@ -55,6 +61,9 @@ export default function ProfilePage() {
         full_name: data.adminUser.full_name || '',
         phone: data.adminUser.phone || '',
         company_name: data.company.name || '',
+        job_site_lat: data.company.job_site_lat?.toString() || '',
+        job_site_lng: data.company.job_site_lng?.toString() || '',
+        geofence_radius: data.company.geofence_radius?.toString() || '100',
       });
     }
     setLoading(false);
@@ -142,6 +151,9 @@ export default function ProfilePage() {
                 full_name: profile.adminUser.full_name || '',
                 phone: profile.adminUser.phone || '',
                 company_name: profile.company.name || '',
+                job_site_lat: profile.company.job_site_lat?.toString() || '',
+                job_site_lng: profile.company.job_site_lng?.toString() || '',
+                geofence_radius: profile.company.geofence_radius?.toString() || '100',
               });
             }}>
               Cancel
@@ -270,6 +282,108 @@ export default function ProfilePage() {
               Change Password
             </Button>
           </div>
+        </div>
+      </Card>
+
+      {/* Job Site & Geofence */}
+      <Card>
+        <CardTitle>Job Site & Geofence</CardTitle>
+        <div className="mt-4 space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Set your job site coordinates to require workers to verify their location when clocking in. Leave blank to allow clock-in from anywhere.
+          </p>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <MapPin className="h-4 w-4" />
+                Latitude
+              </label>
+              {editMode ? (
+                <input
+                  type="number"
+                  step="0.000001"
+                  value={form.job_site_lat}
+                  onChange={(e) => setForm({ ...form, job_site_lat: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
+                  placeholder="e.g., 37.7749"
+                />
+              ) : (
+                <p className="text-sm text-gray-900 dark:text-gray-100">
+                  {profile.company.job_site_lat || 'Not set'}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <MapPin className="h-4 w-4" />
+                Longitude
+              </label>
+              {editMode ? (
+                <input
+                  type="number"
+                  step="0.000001"
+                  value={form.job_site_lng}
+                  onChange={(e) => setForm({ ...form, job_site_lng: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
+                  placeholder="e.g., -122.4194"
+                />
+              ) : (
+                <p className="text-sm text-gray-900 dark:text-gray-100">
+                  {profile.company.job_site_lng || 'Not set'}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              Geofence Radius (meters)
+            </label>
+            {editMode ? (
+              <input
+                type="number"
+                value={form.geofence_radius}
+                onChange={(e) => setForm({ ...form, geofence_radius: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
+                placeholder="100"
+              />
+            ) : (
+              <p className="text-sm text-gray-900 dark:text-gray-100">
+                {profile.company.geofence_radius || '100'} meters
+              </p>
+            )}
+          </div>
+
+          {editMode && (
+            <Button
+              variant="outline"
+              onClick={async () => {
+                if (!navigator.geolocation) {
+                  setError('Geolocation is not supported by your browser');
+                  return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                    setForm({
+                      ...form,
+                      job_site_lat: position.coords.latitude.toString(),
+                      job_site_lng: position.coords.longitude.toString(),
+                    });
+                    setSuccess('Current location captured!');
+                    setTimeout(() => setSuccess(''), 2000);
+                  },
+                  (error) => {
+                    setError('Failed to get current location. Please enable GPS.');
+                  }
+                );
+              }}
+            >
+              <MapPin className="mr-2 h-4 w-4" />
+              Use My Current Location
+            </Button>
+          )}
         </div>
       </Card>
 
