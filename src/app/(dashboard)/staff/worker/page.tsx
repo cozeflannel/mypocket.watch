@@ -193,7 +193,12 @@ export default function WorkerPage() {
 
       const workerData = await response.json();
       setNewWorker(workerData);
-      setTelegramLink(workerData.telegramLink || null);
+      // Build telegram link — use API-provided link or derive from metadata code
+      const metaCode = workerData.metadata?.telegram_link_code as string | undefined;
+      const tgLink: string | null =
+        workerData.telegramLink ||
+        (metaCode ? `https://t.me/MyPocketWatchbot?start=${metaCode}` : null);
+      setTelegramLink(tgLink);
 
       // Assign to teams if selected
       if (formData.team_ids.length > 0) {
