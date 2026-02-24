@@ -203,31 +203,78 @@ export default function WorkerPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               lead_worker_id: teamId,
-              team_member_id: worker.id,
+              team_member_id: workerData.id,
             }),
           });
         }
       }
 
-      // Create schedule if custom
+      // Create schedules for next 14 days based on selected template
+      const template = SCHEDULE_TEMPLATES.find(t => t.id === formData.schedule_template);
+      const schedulePromises: Promise<Response>[] = [];
+
       if (formData.schedule_template === 'custom') {
-        for (const day of DAYS) {
-          const schedule = formData.custom_schedule[day.key];
-          if (schedule.enabled) {
-            // Create recurring schedule entries (simplified - just one week for now)
-            await fetch('/api/schedules', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                worker_id: worker.id,
-                start_time: schedule.start,
-                end_time: schedule.end,
-                break_minutes: 60,
-              }),
-            });
+        // Custom: build from formData.custom_schedule
+        const dayIndexMap: Record<string, number> = {
+          sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+          thursday: 4, friday: 5, saturday: 6,
+        };
+        for (let offset = 0; offset < 14; offset++) {
+          const date = new Date();
+          date.setDate(date.getDate() + offset);
+          const dayName = Object.keys(dayIndexMap).find(
+            k => dayIndexMap[k] === date.getDay()
+          );
+          if (dayName && formData.custom_schedule[dayName]?.enabled) {
+            const schedule = formData.custom_schedule[dayName];
+            schedulePromises.push(
+              fetch('/api/schedules', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  worker_id: workerData.id,
+                  date: date.toISOString().split('T')[0],
+                  start_time: schedule.start,
+                  end_time: schedule.end,
+                  break_minutes: 30,
+                }),
+              })
+            );
+          }
+        }
+      } else if (template && template.days.length > 0) {
+        // Named template: e.g. monday_friday
+        const dayNameToIndex: Record<string, number> = {
+          sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+          thursday: 4, friday: 5, saturday: 6,
+        };
+        for (let offset = 0; offset < 14; offset++) {
+          const date = new Date();
+          date.setDate(date.getDate() + offset);
+          const dayIndex = date.getDay();
+          const dayName = Object.keys(dayNameToIndex).find(
+            k => dayNameToIndex[k] === dayIndex
+          );
+          if (dayName && template.days.includes(dayName)) {
+            schedulePromises.push(
+              fetch('/api/schedules', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  worker_id: workerData.id,
+                  date: date.toISOString().split('T')[0],
+                  start_time: template.start,
+                  end_time: template.end,
+                  break_minutes: 30,
+                }),
+              })
+            );
           }
         }
       }
+
+      // Fire all schedule creates (ignore individual failures — duplicates return 409)
+      await Promise.allSettled(schedulePromises);
 
       setWizardOpen(false);
       setShowSuccessModal(true);
