@@ -35,7 +35,7 @@ async function linkTelegramId(workerId: string, telegramId: string): Promise<boo
 
 export async function POST(request: NextRequest) {
   const secretToken = request.headers.get('x-telegram-bot-api-secret-token');
-  if (process.env.NODE_ENV === 'production' && secretToken !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+  if (process.env.NODE_ENV === 'production' && process.env.TELEGRAM_WEBHOOK_SECRET && secretToken !== process.env.TELEGRAM_WEBHOOK_SECRET) {
     return new NextResponse('Forbidden', { status: 403 });
   }
 

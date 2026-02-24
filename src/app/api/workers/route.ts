@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthContext, isAuthError } from '@/lib/auth-helpers';
 import { logAuditAction } from '@/lib/audit';
-import { sendWorkerWelcome } from '@/lib/messaging';
 import twilio from 'twilio';
 
 const COLORS = [
@@ -106,9 +105,6 @@ export async function POST(request: NextRequest) {
       // Don't fail the worker creation if SMS fails
     }
   }
-
-  // Send welcome message with Telegram setup instructions
-  await sendWorkerWelcome(worker);
 
   return NextResponse.json(worker, { status: 201 });
 }
