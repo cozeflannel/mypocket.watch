@@ -3,15 +3,17 @@ import { getAuthContext, isAuthError } from '@/lib/auth-helpers';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const ctx = await getAuthContext();
   if (isAuthError(ctx)) return ctx;
 
+  const { id } = await params;
+
   const { data, error } = await ctx.supabase
     .from('message_logs')
     .select('*')
-    .eq('worker_id', params.id)
+    .eq('worker_id', id)
     .eq('company_id', ctx.company.id)
     .order('created_at', { ascending: true });
 
