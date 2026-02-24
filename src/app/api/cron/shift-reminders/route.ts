@@ -10,7 +10,6 @@ function getSupabaseAdmin() {
 }
 
 export async function GET(request: NextRequest) {
-  // Auth: Check for cron secret if set
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const authHeader = request.headers.get('x-cron-secret');
@@ -21,18 +20,20 @@ export async function GET(request: NextRequest) {
 
   const supabase = getSupabaseAdmin();
   const now = new Date();
-  const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
-
-  // Get today's date in UTC
   const today = now.toISOString().split('T')[0];
 
-  // Find schedules starting within the next 5 minutes
+  // Build HH:MM time strings for the current window (now → now+5min)
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const nowHHMM = `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}`;
+  const future = new Date(now.getTime() + 5 * 60 * 1000);
+  const futureHHMM = `${pad(future.getUTCHours())}:${pad(future.getUTCMinutes())}`;
+
   const { data: schedules, error: scheduleError } = await supabase
     .from('schedules')
     .select('*, worker:workers(*)')
     .eq('date', today)
-    .gte('start_time', now.toISOString())
-    .lte('start_time', fiveMinutesFromNow.toISOString());
+    .gte('start_time', nowHHMM)
+    .lte('start_time', futureHHMM);
 
   if (scheduleError) {
     console.error('Error fetching schedules:', scheduleError);
@@ -47,77 +48,64 @@ export async function GET(request: NextRequest) {
 
   for (const schedule of schedules) {
     if (!schedule.worker) continue;
-
     const worker = schedule.worker;
 
-    // Check if we already sent a reminder today for this worker
+    // Skip if already reminded today for this schedule
     const { data: existingLog } = await supabase
       .from('message_logs')
       .select('id')
       .eq('worker_id', worker.id)
       .eq('message_type', 'shift_reminder')
       .gte('created_at', `${today}T00:00:00Z`)
-      .single();
+      .maybeSingle();
 
-    if (existingLog) {
-      // Already reminded this worker today
-      continue;
-    }
+    if (existingLog) continue;
 
-    // Format start time for display
-    const startTime = new Date(schedule.start_time).toLocaleTimeString('en-US', {
+    // Format start time for display (start_time is "HH:MM")
+    const [hours, minutes] = schedule.start_time.split(':').map(Number);
+    const displayDate = new Date();
+    displayDate.setUTCHours(hours, minutes, 0, 0);
+    const startTimeDisplay = displayDate.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
     });
 
-    const message = `⏰ Hey ${worker.first_name}! Your shift starts at ${startTime}. Clock in when you're ready — tap Clock In below.`;
+    const message = `⏰ Hey ${worker.first_name}! Your shift starts at ${startTimeDisplay}. Clock in when you're ready.`;
 
     try {
-      let success = false;
       let platform: 'telegram' | 'sms' = 'telegram';
+      let sent = false;
 
-      // Send via worker's preferred channel
-      const preferred = worker.preferred_communication || 'telegram';
-
-      if ((preferred === 'telegram' || preferred === 'sms') && worker.telegram_id) {
-        // Try Telegram first
-        success = await sendTelegram(worker.telegram_id, message, getTelegramKeyboard());
+      if (worker.telegram_id) {
+        sent = await sendTelegram(worker.telegram_id, message, getTelegramKeyboard());
         platform = 'telegram';
       }
 
-      // Fallback to SMS if Telegram fails or no Telegram ID
-      if (!success && worker.phone) {
-        const smsMessage = message + " Reply '1' to clock in.";
-        await sendSMS(worker.phone, smsMessage);
-        success = true;
+      if (!sent && worker.phone && process.env.TWILIO_ACCOUNT_SID) {
+        await sendSMS(worker.phone, message + " Reply '1' to clock in.");
+        sent = true;
         platform = 'sms';
       }
 
-      if (success) {
-        // Log the message
+      if (sent) {
         await logMessage({
           companyId: worker.company_id,
           workerId: worker.id,
           direction: 'outbound',
           platform,
           messageType: 'shift_reminder',
-          toAddress: platform === 'telegram' ? worker.telegram_id : worker.phone,
-          fromAddress: platform === 'telegram' ? 'MyPocketWatchbot' : process.env.TWILIO_PHONE_NUMBER || '',
+          toAddress: platform === 'telegram' ? (worker.telegram_id ?? '') : (worker.phone ?? ''),
+          fromAddress: 'bot',
           body: message,
           status: 'sent',
         });
-
         remindersSent++;
       }
-    } catch (error) {
-      console.error(`Failed to send reminder to worker ${worker.id}:`, error);
+    } catch (err) {
+      console.error(`Failed to send reminder to worker ${worker.id}:`, err);
     }
   }
 
-  return NextResponse.json({
-    message: 'Shift reminders processed',
-    count: remindersSent,
-    schedules: schedules.length,
-  });
+  return NextResponse.json({ message: 'Done', remindersSent, schedulesChecked: schedules.length });
 }
