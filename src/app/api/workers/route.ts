@@ -74,16 +74,36 @@ export async function POST(request: NextRequest) {
     newValues: { first_name, last_name, phone, position },
   });
 
-  // Initiate phone verification via Twilio Verify
-  if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_VERIFY_SERVICE_SID) {
+  // Generate 6-character alphanumeric link code
+  const generateLinkCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
+  const linkCode = generateLinkCode();
+
+  // Update worker with link code in metadata
+  await ctx.supabase
+    .from('workers')
+    .update({ metadata: { telegram_link_code: linkCode } })
+    .eq('id', worker.id);
+
+  // Send SMS with Telegram link code
+  if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_PHONE_NUMBER) {
     try {
       const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-      await twilioClient.verify.v2
-        .services(process.env.TWILIO_VERIFY_SERVICE_SID)
-        .verifications.create({ to: phone, channel: 'sms' });
+      await twilioClient.messages.create({
+        to: phone,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        body: `Hi ${first_name}, welcome! To receive your schedule via Telegram, message @mypocketwatchbot and send: /link ${linkCode}`
+      });
     } catch (err) {
-      console.error('Twilio Verify initiation failed:', err);
-      // Don't fail the worker creation, verification can be retried
+      console.error('Twilio SMS failed:', err);
+      // Don't fail the worker creation if SMS fails
     }
   }
 

@@ -288,22 +288,40 @@ export default function IntegrationsPage() {
           </Card>
 
           <Card>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                  <svg className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                  <svg className="h-6 w-6 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
                   </svg>
                 </div>
                 <div>
-                  <p className="font-medium">Telegram</p>
-                  <p className="text-xs text-gray-500">Time tracking via bot</p>
+                  <div className="flex items-center gap-2">
+                    <CardTitle>Telegram Bot</CardTitle>
+                    <Badge variant="success">
+                      <CheckCircle className="mr-1 h-3 w-3" />
+                      Active
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    Workers verify their info and receive schedules via Telegram
+                  </p>
                 </div>
               </div>
-              <Badge variant="success">
-                <CheckCircle className="mr-1 h-3 w-3" />
-                Ready
-              </Badge>
+            </div>
+
+            <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/30">
+              <div className="flex items-start gap-2">
+                <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-700 dark:text-blue-400">
+                  <p className="font-medium mb-2">Setup Instructions:</p>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Set TELEGRAM_BOT_TOKEN in your Vercel environment variables</li>
+                    <li>Register your webhook: POST https://api.telegram.org/bot&#123;TOKEN&#125;/setWebhook with url=https://mypocket.watch/api/webhooks/telegram</li>
+                    <li>Workers connect automatically when added — they receive an SMS with a /link code</li>
+                  </ol>
+                </div>
+              </div>
             </div>
           </Card>
 

@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableEmpty } from '@/components/ui/Table';
-import { Users, Clock, DollarSign, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Users, Clock, DollarSign, AlertTriangle, RefreshCw, X } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import type { TimeEntry, Worker, Schedule } from '@/types/database';
 
 interface TimeEntryWithWorker extends TimeEntry {
@@ -39,7 +40,34 @@ export default function LiveStatusPage() {
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(new Date());
 
+  // Drawer state
+  const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
+  const [threadOpen, setThreadOpen] = useState(false);
+  const [workerThread, setWorkerThread] = useState<any[]>([]);
+  const threadEndRef = useRef<HTMLDivElement>(null);
+
   const today = format(new Date(), 'yyyy-MM-dd');
+
+  // Fetch worker message thread
+  const fetchWorkerThread = async (workerId: string) => {
+    try {
+      const response = await fetch(`/api/workers/${workerId}/messages`);
+      if (response.ok) {
+        const data = await response.json();
+        setWorkerThread(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch worker thread:', err);
+      setWorkerThread([]);
+    }
+  };
+
+  // Auto-scroll to bottom when thread changes
+  useEffect(() => {
+    if (threadEndRef.current) {
+      threadEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [workerThread]);
 
   const fetchData = useCallback(async () => {
     if (!company) return;
@@ -382,7 +410,17 @@ export default function LiveStatusPage() {
                           className={`h-3 w-3 rounded-full ${isActive ? 'animate-pulse' : ''}`}
                           style={{ backgroundColor: entry.worker?.color || '#gray' }}
                         />
-                        <span className="font-medium">
+                        <span
+                          className="font-medium cursor-pointer hover:underline"
+                          onClick={() => {
+                            const worker = workers.find(w => w.id === entry.worker_id);
+                            if (worker) {
+                              setSelectedWorker(worker);
+                              setThreadOpen(true);
+                              fetchWorkerThread(worker.id);
+                            }
+                          }}
+                        >
                           {entry.worker?.first_name} {entry.worker?.last_name}
                         </span>
                         {isActive && (
@@ -411,6 +449,80 @@ export default function LiveStatusPage() {
           </div>
         )}
       </Card>
+
+      {/* Per-Worker Message Thread Drawer */}
+      {threadOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => {
+              setThreadOpen(false);
+              setSelectedWorker(null);
+              setWorkerThread([]);
+            }}
+          />
+
+          {/* Drawer */}
+          <div className="relative w-80 md:w-96 h-full bg-white dark:bg-gray-900 shadow-xl flex flex-col">
+            {/* Header */}
+            <div className="border-b border-gray-200 dark:border-gray-800 px-4 py-4 flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900 dark:text-white">
+                {selectedWorker?.first_name} {selectedWorker?.last_name}
+              </h3>
+              <button
+                onClick={() => {
+                  setThreadOpen(false);
+                  setSelectedWorker(null);
+                  setWorkerThread([]);
+                }}
+                className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Message List */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {workerThread.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-sm text-gray-500 dark:text-gray-400">
+                  No messages yet
+                </div>
+              ) : (
+                workerThread.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      'flex',
+                      msg.direction === 'outbound' ? 'justify-end' : 'justify-start'
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        'rounded-lg px-3 py-2 max-w-[80%]',
+                        msg.direction === 'outbound'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100'
+                      )}
+                    >
+                      <p className="text-sm">{msg.body || msg.message || msg.content || ''}</p>
+                      <p
+                        className={cn(
+                          'text-[10px] mt-1',
+                          msg.direction === 'outbound' ? 'text-blue-200' : 'text-gray-400'
+                        )}
+                      >
+                        {format(new Date(msg.created_at), 'h:mm a')}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={threadEndRef} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

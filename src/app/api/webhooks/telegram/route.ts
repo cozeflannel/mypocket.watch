@@ -114,6 +114,40 @@ export async function POST(request: NextRequest) {
   if (update.message?.text) {
     const text = update.message.text;
 
+    // Handle /link CODE command
+    if (text.toLowerCase().startsWith('/link ')) {
+      const code = text.slice(6).trim().toUpperCase();
+      const supabase = getSupabaseAdmin();
+
+      // Find worker by link code
+      const { data: workers } = await supabase
+        .from('workers')
+        .select('*')
+        .filter('metadata->>telegram_link_code', 'eq', code)
+        .is('telegram_id', null);
+
+      if (workers && workers.length > 0) {
+        const worker = workers[0];
+
+        // Update worker with telegram_id and set pending_verification
+        await supabase
+          .from('workers')
+          .update({
+            telegram_id: userId,
+            metadata: { pending_verification: true }
+          })
+          .eq('id', worker.id);
+
+        await sendTelegram(
+          chatId,
+          `Account linked! Hi ${worker.first_name}!\n\nPlease verify your info:\nPhone: ${worker.phone}\n\nIs this correct? Reply YES or NO`
+        );
+      } else {
+        await sendTelegram(chatId, "Invalid link code. Please contact your employer.");
+      }
+      return NextResponse.json({ ok: true });
+    }
+
     // Handle /start command - with self-onboarding flow
     if (text === '/start') {
       const worker = await getWorkerByTelegramId(userId);
@@ -134,6 +168,100 @@ export async function POST(request: NextRequest) {
 
     // Handle phone number verification (onboarding)
     const worker = await getWorkerByTelegramId(userId);
+
+    // Handle YES verification
+    if (text.toUpperCase() === 'YES' && worker?.metadata?.pending_verification) {
+      const supabase = getSupabaseAdmin();
+
+      // Update worker: phone_verified and remove pending_verification
+      await supabase
+        .from('workers')
+        .update({
+          phone_verified: true,
+          metadata: {}
+        })
+        .eq('id', worker.id);
+
+      // Fetch upcoming schedules
+      const { data: schedules } = await supabase
+        .from('schedules')
+        .select('*')
+        .eq('worker_id', worker.id)
+        .gte('date', new Date().toISOString().split('T')[0])
+        .order('date', { ascending: true })
+        .limit(5);
+
+      let scheduleList = 'No upcoming schedules yet.';
+      if (schedules && schedules.length > 0) {
+        scheduleList = schedules.map(s => {
+          const date = new Date(s.date);
+          const dayName = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+          return `${dayName} ${s.start_time} - ${s.end_time}`;
+        }).join('\n');
+      }
+
+      await sendTelegram(
+        chatId,
+        `Thanks for confirming! You are all set.\n\nYour upcoming schedule:\n${scheduleList}\n\nUse the buttons below to clock in/out.`,
+        getTelegramKeyboard()
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    // Handle NO verification
+    if (text.toUpperCase() === 'NO' && worker?.metadata?.pending_verification) {
+      const supabase = getSupabaseAdmin();
+
+      await supabase
+        .from('workers')
+        .update({
+          metadata: { pending_verification: false, awaiting_correction_details: true }
+        })
+        .eq('id', worker.id);
+
+      await sendTelegram(
+        chatId,
+        "No problem! What information is incorrect? Please describe what needs to be updated."
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    // Handle correction details
+    if (worker?.metadata?.awaiting_correction_details && text && text !== '/start') {
+      const supabase = getSupabaseAdmin();
+
+      // Store correction details
+      await supabase
+        .from('workers')
+        .update({
+          metadata: { correction_details: text, awaiting_correction_details: false }
+        })
+        .eq('id', worker.id);
+
+      // Find admin users for this company
+      const { data: adminUsers } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('company_id', worker.company_id)
+        .not('telegram_id', 'is', null);
+
+      // Notify admins
+      if (adminUsers && adminUsers.length > 0) {
+        for (const admin of adminUsers) {
+          await sendTelegram(
+            admin.telegram_id!,
+            `Worker ${worker.first_name} ${worker.last_name} says their info needs updating:\n\n"${text}"\n\nPlease update in the admin panel.`
+          );
+        }
+      }
+
+      await sendTelegram(
+        chatId,
+        "Thanks! Your employer has been notified and will update your info."
+      );
+      return NextResponse.json({ ok: true });
+    }
+
     if (!worker) {
       // Try to find by phone number
       const phoneWorker = await getWorkerByPhone(text);
