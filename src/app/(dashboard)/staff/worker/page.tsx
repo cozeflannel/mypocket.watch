@@ -730,6 +730,7 @@ export default function WorkerPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Position</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Rate</TableHead>
@@ -758,6 +759,16 @@ export default function WorkerPage() {
                       />
                       {worker.first_name} {worker.last_name}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {worker.position ? (
+                      <Badge variant={
+                        worker.position === 'Manager' ? 'warning' :
+                        worker.position === 'Lead' ? 'default' : 'success'
+                      }>
+                        {worker.position}
+                      </Badge>
+                    ) : '—'}
                   </TableCell>
                   <TableCell>{worker.phone ?? '—'}</TableCell>
                   <TableCell>{worker.email ?? '—'}</TableCell>
@@ -911,11 +922,16 @@ export default function WorkerPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm font-medium">Position</label>
-              <input
+              <select
                 value={editData.position || ''}
                 onChange={(e) => setEditData({ ...editData, position: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              />
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
+              >
+                <option value="">Select position...</option>
+                <option value="Worker">Worker</option>
+                <option value="Lead">Lead</option>
+                <option value="Manager">Manager</option>
+              </select>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">Hourly Rate</label>
