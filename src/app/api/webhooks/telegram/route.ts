@@ -114,9 +114,15 @@ export async function POST(request: NextRequest) {
   if (update.message?.text) {
     const text = update.message.text;
 
-    // Handle /link CODE command
-    if (text.toLowerCase().startsWith('/link ')) {
-      const code = text.slice(6).trim().toUpperCase();
+    // Handle /start LINKCODE (Telegram deep link format: t.me/bot?start=CODE)
+    // Also handle /link CODE as fallback
+    const isDeepLink = text.toLowerCase().startsWith('/start ') && text.split(' ').length === 2;
+    const isLinkCommand = text.toLowerCase().startsWith('/link ');
+
+    if (isDeepLink || isLinkCommand) {
+      const code = isDeepLink
+        ? text.split(' ')[1].trim().toUpperCase()
+        : text.slice(6).trim().toUpperCase();
       const supabase = getSupabaseAdmin();
 
       // Find worker by link code

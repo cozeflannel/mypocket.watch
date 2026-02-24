@@ -20,7 +20,10 @@ import {
   Edit2,
   ArrowRight,
   X,
-  Building2
+  Building2,
+  Copy,
+  Send,
+  CheckCheck
 } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import type { Worker } from '@/types';
@@ -91,6 +94,8 @@ export default function WorkerPage() {
   const [saving, setSaving] = useState(false);
   const [newWorker, setNewWorker] = useState<Worker | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [telegramLink, setTelegramLink] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   
   // Edit state
   const [editWorker, setEditWorker] = useState<Worker | null>(null);
@@ -186,8 +191,9 @@ export default function WorkerPage() {
         throw new Error(error.error || 'Failed to add worker');
       }
 
-      const worker = await response.json();
-      setNewWorker(worker);
+      const workerData = await response.json();
+      setNewWorker(workerData);
+      setTelegramLink(workerData.telegramLink || null);
 
       // Assign to teams if selected
       if (formData.team_ids.length > 0) {
@@ -834,41 +840,79 @@ export default function WorkerPage() {
         </div>
       </Modal>
 
-      {/* Success Modal with Hierarchy Focus */}
+      {/* Success Modal */}
       <Modal
         open={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
-        title="🎉 Worker Added Successfully!"
+        onClose={() => { setShowSuccessModal(false); setLinkCopied(false); }}
+        title="🎉 Worker Added!"
       >
-        <div className="text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-            <Check className="h-8 w-8 text-green-600" />
-          </div>
-          
-          <p className="mt-4 text-lg font-semibold">
-            {newWorker?.first_name} {newWorker?.last_name} has been added to your team!
-          </p>
-          
-          <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
-            <div className="flex items-center justify-center gap-2">
-              <Building2 className="h-5 w-5 text-gray-400" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Redirecting to Staff Hierarchy...
-              </span>
+        <div className="space-y-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 shrink-0">
+              <Check className="h-6 w-6 text-green-600" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">
+                {newWorker?.first_name} {newWorker?.last_name} has been added.
+              </p>
+              <p className="text-sm text-gray-500">
+                {newWorker?.position && <span className="mr-2">{newWorker.position}</span>}
+                {newWorker?.phone}
+              </p>
             </div>
           </div>
-          
-          <div className="mt-6 flex flex-col gap-2">
-            <Button onClick={() => setShowSuccessModal(false)} className="w-full">
-              View Staff Hierarchy
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={() => setShowSuccessModal(false)}
-              className="w-full"
+
+          {telegramLink && (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/30">
+              <div className="flex items-center gap-2 mb-2">
+                <Send className="h-4 w-4 text-blue-600" />
+                <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">
+                  Send this Telegram link to {newWorker?.first_name}
+                </p>
+              </div>
+              <p className="text-xs text-blue-700 dark:text-blue-400 mb-3">
+                When they tap it, Telegram opens and the bot automatically asks them to verify their phone number and sends their schedule.
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 rounded border border-blue-300 bg-white px-3 py-2 text-xs font-mono text-gray-700 dark:bg-gray-900 dark:text-gray-300 truncate">
+                  {telegramLink}
+                </div>
+                <Button
+                  size="sm"
+                  variant={linkCopied ? 'secondary' : 'default'}
+                  onClick={() => {
+                    navigator.clipboard.writeText(telegramLink);
+                    setLinkCopied(true);
+                    setTimeout(() => setLinkCopied(false), 3000);
+                  }}
+                >
+                  {linkCopied ? (
+                    <><CheckCheck className="h-3.5 w-3.5 mr-1" /> Copied!</>
+                  ) : (
+                    <><Copy className="h-3.5 w-3.5 mr-1" /> Copy</>
+                  )}
+                </Button>
+              </div>
+              <p className="mt-2 text-xs text-blue-600 dark:text-blue-500">
+                Share via text, email, or any messaging app. Link expires once used.
+              </p>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              className="flex-1"
+              onClick={() => { setShowSuccessModal(false); setLinkCopied(false); }}
             >
               Close
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={() => { setShowSuccessModal(false); setLinkCopied(false); }}
+            >
+              Done
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
         </div>

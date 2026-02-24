@@ -9,6 +9,15 @@ const COLORS = [
   '#D946EF', '#0EA5E9', '#84CC16', '#E11D48', '#7C3AED',
 ];
 
+function generateLinkCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 export async function GET() {
   const ctx = await getAuthContext();
   if (isAuthError(ctx)) return ctx;
@@ -35,9 +44,12 @@ export async function POST(request: NextRequest) {
   }
 
   const assignedColor = color || COLORS[Math.floor(Math.random() * COLORS.length)];
-
-  // Use provided hire_date or default to today
   const workerHireDate = hire_date || new Date().toISOString().split('T')[0];
+
+  // Generate link code upfront so it's included in the initial insert
+  const linkCode = generateLinkCode();
+  const botUsername = 'MyPocketWatchbot';
+  const telegramLink = `https://t.me/${botUsername}?start=${linkCode}`;
 
   const { data: worker, error } = await ctx.supabase
     .from('workers')
@@ -53,6 +65,7 @@ export async function POST(request: NextRequest) {
       hire_date: workerHireDate,
       manager_id: manager_id || null,
       team_id: team_id || null,
+      metadata: { telegram_link_code: linkCode },
     })
     .select()
     .single();
@@ -73,38 +86,20 @@ export async function POST(request: NextRequest) {
     newValues: { first_name, last_name, phone, position },
   });
 
-  // Generate 6-character alphanumeric link code
-  const generateLinkCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
-  };
-
-  const linkCode = generateLinkCode();
-
-  // Update worker with link code in metadata
-  await ctx.supabase
-    .from('workers')
-    .update({ metadata: { telegram_link_code: linkCode } })
-    .eq('id', worker.id);
-
-  // Send SMS with Telegram link code
+  // Send SMS via Twilio if configured (optional — Telegram deep link is the primary onboarding method)
   if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_PHONE_NUMBER) {
     try {
       const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
       await twilioClient.messages.create({
         to: phone,
         from: process.env.TWILIO_PHONE_NUMBER,
-        body: `Hi ${first_name}, welcome! To receive your schedule via Telegram, message @mypocketwatchbot and send: /link ${linkCode}`
+        body: `Hi ${first_name}, welcome to PocketWatch! Tap this link to verify your info and get your schedule on Telegram: ${telegramLink}`,
       });
     } catch (err) {
-      console.error('Twilio SMS failed:', err);
-      // Don't fail the worker creation if SMS fails
+      console.error('Twilio SMS failed (non-blocking):', err);
     }
   }
 
-  return NextResponse.json(worker, { status: 201 });
+  // Return worker with telegram link so the frontend can display it
+  return NextResponse.json({ ...worker, telegramLink }, { status: 201 });
 }
