@@ -1,4 +1,4 @@
-**MyPocketWatch** — Workforce time-tracking & payroll management for small businesses.
+**MyPocketWatch** — Workforce time-tracking & payroll management for small businesses. ⏱
 
 Workers clock in/out via SMS, WhatsApp, Telegram, or Messenger. Admins manage schedules, payroll, and live status from a web dashboard.
 
