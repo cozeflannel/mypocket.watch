@@ -38,9 +38,37 @@ export default function IntegrationsPage() {
   const [testingSMS, setTestingSMS] = useState(false);
   const [testPhone, setTestPhone] = useState('');
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
+  const [googleCalendarEmail, setGoogleCalendarEmail] = useState<string | null>(null);
 
-  const { company } = useCompany();
+  const { company, adminUser } = useCompany();
   const supabase = createClient();
+
+  // Check for OAuth callback result in URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('connected') === 'google') {
+      window.history.replaceState({}, '', '/integrations');
+    }
+  }, []);
+
+  // Check Google Calendar connection status
+  useEffect(() => {
+    const checkGoogleCalendar = async () => {
+      if (!adminUser) return;
+      const { data } = await supabase
+        .from('connected_accounts')
+        .select('email')
+        .eq('worker_id', adminUser.id)
+        .eq('provider', 'google')
+        .single();
+      if (data) {
+        setGoogleCalendarConnected(true);
+        setGoogleCalendarEmail(data.email);
+      }
+    };
+    checkGoogleCalendar();
+  }, [adminUser]);
 
   useEffect(() => {
     const fetchTwilioStatus = async () => {
@@ -325,7 +353,7 @@ export default function IntegrationsPage() {
             </div>
           </Card>
 
-          <Card className="opacity-75">
+          <Card className={googleCalendarConnected ? '' : 'opacity-75'}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/30">
@@ -334,13 +362,31 @@ export default function IntegrationsPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-medium">Google Calendar</p>
-                  <p className="text-xs text-gray-500">Sync schedules</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">Google Calendar</p>
+                    {googleCalendarConnected && (
+                      <Badge variant="success">
+                        <CheckCircle className="mr-1 h-3 w-3" />
+                        Connected
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {googleCalendarConnected && googleCalendarEmail
+                      ? googleCalendarEmail
+                      : 'Sync schedules'}
+                  </p>
                 </div>
               </div>
-              <Button size="sm" variant="outline" onClick={() => window.location.href = '/api/auth/google'}>
-                Connect
-              </Button>
+              {googleCalendarConnected ? (
+                <Button size="sm" variant="secondary" onClick={() => window.location.href = '/api/auth/google'}>
+                  Reconnect
+                </Button>
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => window.location.href = '/api/auth/google'}>
+                  Connect
+                </Button>
+              )}
             </div>
           </Card>
 
