@@ -338,7 +338,7 @@ export default function IntegrationsPage() {
                   <p className="text-xs text-gray-500">Sync schedules</p>
                 </div>
               </div>
-              <Button size="sm" variant="outline" onClick={() => window.location.href = '/api/auth/google/calendar'}>
+              <Button size="sm" variant="outline" onClick={() => window.location.href = '/api/auth/google'}>
                 Connect
               </Button>
             </div>
